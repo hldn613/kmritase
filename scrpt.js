@@ -28,7 +28,7 @@ function checkUrlAndRunScript() {
         }
 
         // Tambahkan target _blank melalui JavaScript
-        links[i].setAttribute('target', '_blank');
+        //links[i].setAttribute('target', '_blank');
 
         console.log(`Menekan Hyperlink ${i + 1}`);
         links[i].click(); // "Klik" hyperlink
