@@ -1,5 +1,5 @@
 // URL yang diinginkan
-const desiredUrl = 'https://mitradarat-fms.dephub.go.id/digitalchecker/kmritase';
+const desiredUrl = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
 
 // Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
