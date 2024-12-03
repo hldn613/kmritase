@@ -4,10 +4,8 @@ const desiredUrl = 'https://mitradarat-fms.dephub.go.id/digitalchecker/kmritase'
 // Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
   if (window.location.href === desiredUrl) {
-    // Tempatkan skrip Anda di sini
     console.log('URL cocok, menjalankan skrip...');
 
-    // Contoh skrip Anda yang dijalankan
     // Fungsi untuk menunggu beberapa waktu
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -17,9 +15,13 @@ function checkUrlAndRunScript() {
     let isPaused = false;
     let isStopped = false;
 
-    // Fungsi untuk "menekan" hyperlink satu per satu secara berurutan
-    async function clickLinks(links) {
+    // Fungsi untuk mengunduh file secara berurutan menggunakan Fetch API
+    async function downloadFiles(links) {
       for (let i = 0; i < links.length; i++) {
+        if (!links[i].classList.contains('tooltipp')) {
+          continue; // Lewati link jika tidak memiliki kelas 'tooltipp'
+        }
+
         while (isPaused) {
           await wait(100); // Tunggu hingga tidak pause
         }
@@ -27,13 +29,56 @@ function checkUrlAndRunScript() {
           break; // Berhenti jika reset
         }
 
-        // Tambahkan target _blank melalui JavaScript
-        //links[i].setAttribute('target', '_blank');
+        function convertUrlToFilename(url) {
+          const urlParams = new URLSearchParams(url.split('?')[1]);
+        
+          const noken = urlParams.get('noken').replace(/\+/g, '-');
+          const dateStart = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+          const dateEnd = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+          
+          const filename = `${noken}_${dateStart}_${dateEnd}`;
+          return filename;
+        }
+        
+        const url = links[i].href;
+        const convertedFilename = convertUrlToFilename(url);
+        
+        console.log(convertedFilename); // Output: TB-II-01_2024-11-01 04_59_00_2024-11-01 06_15_00
+        
+        try {
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error('Jaringan bermasalah');
+          }
 
-        console.log(`Menekan Hyperlink ${i + 1}`);
-        links[i].click(); // "Klik" hyperlink
-        await wait(4000); // Tunggu 4 detik sebelum "menekan" hyperlink berikutnya
+          const blob = await response.blob();
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = `${convertedFilename}_Rit-${i + 1}.xlsx`; // Nama file yang akan diunduh
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          console.log(`File dari URL ${url} telah berhasil diunduh`);
+
+          // Tunggu 4 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
+          await wait(4000);
+        } catch (error) {
+          console.error(`Gagal mengunduh file dari URL ${url}:`, error);
+        }
       }
+    }
+
+    // Fungsi untuk mengklik tombol utama sampai menemukan hyperlink
+    async function clickMainButtonUntilLinksFound(btn) {
+      let popupLinks = [];
+      do {
+        btn.click();
+        await wait(3000); // Tambahkan delay untuk menunggu popup muncul
+        popupLinks = document.querySelectorAll('a.tooltipp');
+      } while (popupLinks.length === 0 && !isStopped);
+      return popupLinks;
     }
 
     // Ambil semua elemen tombol utama dengan class 'details'
@@ -48,11 +93,10 @@ function checkUrlAndRunScript() {
 
         console.log(`Tombol Details ${index + 1} ditekan`);
 
-        await wait(3000); // Tambahkan delay sebelum Ambil semua hyperlink di dalam popup dengan class 'tooltipp'
-        const popupLinks = document.querySelectorAll('.tooltipp');
+        const popupLinks = await clickMainButtonUntilLinksFound(btn); // Tekan tombol utama sampai menemukan link
 
-        // "Tekan" hyperlink dalam popup satu per satu dengan delay
-        await clickLinks(popupLinks);
+        // Mengunduh file dari setiap hyperlink dalam popup dengan delay
+        await downloadFiles(popupLinks);
 
         // Lanjutkan ke tombol utama berikutnya jika ada
         if (index < mainButtons.length - 1) {
@@ -60,7 +104,7 @@ function checkUrlAndRunScript() {
           mainButtons[index + 1].click();
         } else {
           // Panggil showModal setelah tombol terakhir ditekan
-          showModal();
+          // showModal();
         }
       }, { once: true }); // Event listener hanya sekali eksekusi per tombol
     });
@@ -142,7 +186,7 @@ function checkUrlAndRunScript() {
     controlsDiv.style.display = 'flex';
     controlsDiv.style.flexDirection = 'column';
     controlsDiv.style.gap = '10px';
-    controlsDiv.style.zIndex = '9990'; // Menambahkan z-index 9999
+    controlsDiv.style.zIndex = '9990'; // Menambahkan z-index 9990
     document.getElementById('tab').appendChild(controlsDiv);
 
     createControlButton('showModalBtn', 'Traktir Kopi', showModal);
