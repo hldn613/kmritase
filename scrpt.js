@@ -1,22 +1,26 @@
-// URL yang diinginkan
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js';
+document.head.appendChild(script);
+
+const modalContainerDiv = document.createElement('div');
+modalContainerDiv.id = 'modalContainer';
+document.body.appendChild(modalContainerDiv);
+
 const harusdi = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
 
-// Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
   if (window.location.href === harusdi) {
     console.log('URL cocok, menjalankan skrip...');
 
-    // Fungsi untuk menunggu beberapa waktu
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    // Variabel untuk kontrol
     let isPaused = false;
     let isStopped = false;
     let allLinks = [];
 
-    // Fungsi untuk mengumpulkan hyperlink secara berurutan
     async function collectLinks(links, mainButtonIndex) {
       for (let i = 0; i < links.length; i++) {
         if (links[i].classList.contains('tooltipp')) {
@@ -25,25 +29,23 @@ function checkUrlAndRunScript() {
       }
     }
 
-    // Fungsi untuk mengklik tombol utama sampai menemukan hyperlink
     async function clickMainButtonUntilLinksFound(btn) {
       let popupLinks = [];
       do {
         btn.click();
-        await wait(1000); // Tambahkan delay untuk menunggu popup muncul
+        await wait(1000);
         popupLinks = document.querySelectorAll('a.tooltipp');
       } while (popupLinks.length === 0 && !isStopped);
       return popupLinks;
     }
 
-    // Fungsi untuk mengunduh file secara berurutan menggunakan Fetch API
     async function downloadFiles() {
       for (let i = 0; i < allLinks.length; i++) {
         while (isPaused) {
-          await wait(100); // Tunggu hingga tidak pause
+          await wait(100);
         }
         if (isStopped) {
-          break; // Berhenti jika reset
+          break;
         }
 
         function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
@@ -60,7 +62,7 @@ function checkUrlAndRunScript() {
         const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
         const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
 
-        console.log(convertedFilename); // Output: TB-II-01_1_1_2024-11-01 04_59_00_2024-11-01 06_15_00
+        console.log(convertedFilename);
 
         try {
           const response = await fetch(url);
@@ -72,14 +74,13 @@ function checkUrlAndRunScript() {
           const blob = await response.blob();
           const link = document.createElement('a');
           link.href = window.URL.createObjectURL(blob);
-          link.download = `${convertedFilename}.xlsx`; // Nama file yang akan diunduh
+          link.download = `${convertedFilename}.xlsx`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
 
           console.log(`File dari URL ${url} telah berhasil diunduh`);
 
-          // Tunggu 4 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
           await wait(1000);
         } catch (error) {
           console.error(`Gagal mengunduh file dari URL ${url}:`, error);
@@ -87,36 +88,30 @@ function checkUrlAndRunScript() {
       }
     }
 
-    // Ambil semua elemen tombol utama dengan class 'details'
     const mainButtons = document.querySelectorAll('.details');
 
-    // Tambahkan event listener pada setiap tombol utama
     mainButtons.forEach((btn, index) => {
       btn.addEventListener('click', async () => {
         if (isStopped) {
-          return; // Jika proses di-reset, jangan lanjut
+          return;
         }
 
         console.log(`Tombol Details ${index + 1} ditekan`);
 
-        const popupLinks = await clickMainButtonUntilLinksFound(btn); // Tekan tombol utama sampai menemukan link
+        const popupLinks = await clickMainButtonUntilLinksFound(btn);
 
-        // Mengumpulkan hyperlink dari setiap popup dengan nomor urut
         await collectLinks(popupLinks, index + 1);
 
-        // Lanjutkan ke tombol utama berikutnya jika ada
         if (index < mainButtons.length - 1) {
           console.log(`Melanjutkan ke Tombol Details ${index + 2}`);
           mainButtons[index + 1].click();
         } else {
-          // Unduh semua file setelah semua hyperlink dikumpulkan
           console.log("download dimulai")
           await downloadFiles();
         }
-      }, { once: true }); // Event listener hanya sekali eksekusi per tombol
+      }, { once: true });
     });
 
-    // Fungsi kontrol
     function startProcess() {
       isPaused = false;
       isStopped = false;
@@ -137,11 +132,9 @@ function checkUrlAndRunScript() {
       console.log('Proses di-reset');
     }
 
-    // Fungsi untuk menampilkan modal
     function showModal() {
       const modalContainer = document.getElementById('modalContainer');
 
-      // Membuat elemen modal
       const modalDiv = document.createElement('div');
       modalDiv.className = 'modal fade';
       modalDiv.id = 'exampleModal';
@@ -167,15 +160,12 @@ function checkUrlAndRunScript() {
         </div>
       `;
 
-      // Menambahkan elemen modal ke dalam container
       modalContainer.appendChild(modalDiv);
 
-      // Menampilkan modal menggunakan Bootstrap 5
       const modal = new bootstrap.Modal(document.getElementById('exampleModal'));
       modal.show();
     }
 
-    // Tambahkan tombol kontrol secara dinamis di dalam div
     function createControlButton(id, text, onClick) {
       const button = document.createElement('button');
       button.id = id;
@@ -184,7 +174,6 @@ function checkUrlAndRunScript() {
       document.getElementById('controls').appendChild(button);
     }
 
-    // Buat elemen div untuk menampung tombol kontrol dan tambahkan ke elemen dengan id 'tab'
     const controlsDiv = document.createElement('div');
     controlsDiv.id = 'controls';
     controlsDiv.style.position = 'fixed';
@@ -193,7 +182,7 @@ function checkUrlAndRunScript() {
     controlsDiv.style.display = 'flex';
     controlsDiv.style.flexDirection = 'column';
     controlsDiv.style.gap = '10px';
-    controlsDiv.style.zIndex = '9990'; // Menambahkan z-index 9990
+    controlsDiv.style.zIndex = '9990';
     document.getElementById('tab').appendChild(controlsDiv);
 
     createControlButton('showModalBtn', 'Traktir Kopi', showModal);
@@ -202,14 +191,53 @@ function checkUrlAndRunScript() {
     createControlButton('resumeBtn', 'Resume', resumeProcess);
     createControlButton('resetBtn', 'Reset', resetProcess);
 
-    // Menambahkan container untuk modal ke dalam body
-    const modalContainerDiv = document.createElement('div');
-    modalContainerDiv.id = 'modalContainer';
-    document.body.appendChild(modalContainerDiv);
   } else {
     console.log('URL tidak cocok, skrip tidak dijalankan.');
   }
 }
 
-// Panggil fungsi untuk memeriksa URL dan menjalankan skrip
-checkUrlAndRunScript();
+function openModal() {
+  const modalHTML = `
+      <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLabel">Input Password</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                      <div class="mb-3">
+                          <label for="key21" class="form-label">Password</label>
+                          <input type="password" class="form-control" id="key21">
+                      </div>
+                  </div>
+                  <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" onclick="checkkey21()">Submit</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHTML;
+  const myModal = new bootstrap.Modal(document.getElementById('myModal'));
+  myModal.show();
+}
+
+function checkkey21() {
+  const key21 = document.getElementById('key21').value;
+  const validHashes = [
+    '18462725b3be3ad2db24f99f62c6b43f',
+    '3858f62230ac3c915f300c664312c63f'
+  ];
+  const key21Hash = CryptoJS.MD5(key21).toString();
+
+  if (validHashes.includes(key21Hash)) {
+    const myModal = bootstrap.Modal.getInstance(document.getElementById('myModal'));
+    myModal.hide();
+    checkUrlAndRunScript()
+  } else {
+    alert('Password salah. Silakan coba lagi.');
+  }
+}
+openModal()
