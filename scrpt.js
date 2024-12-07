@@ -1,5 +1,5 @@
 // URL yang diinginkan
-const desiredUrl = 'https://mitradarat-fms.dephub.go.id/digitalchecker/kmritase';
+const desiredUrl = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
 
 // Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
@@ -60,7 +60,7 @@ function checkUrlAndRunScript() {
         const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
         const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
 
-        console.log(convertedFilename); // Output: TB-II-01_Rit-1_2024-11-01_04_59_00_2024-11-01_06_15_00
+        console.log(convertedFilename); // Output: TB-II-01_1_1_2024-11-01 04_59_00_2024-11-01 06_15_00
 
         try {
           const response = await fetch(url);
@@ -79,15 +79,12 @@ function checkUrlAndRunScript() {
 
           console.log(`File dari URL ${url} telah berhasil diunduh`);
 
-          // Tunggu 1 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
+          // Tunggu 4 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
           await wait(1000);
         } catch (error) {
           console.error(`Gagal mengunduh file dari URL ${url}:`, error);
         }
       }
-
-      // Jalankan fungsi showModal setelah semua unduhan selesai
-      showModal();
     }
 
     // Ambil semua elemen tombol utama dengan class 'details'
@@ -113,7 +110,7 @@ function checkUrlAndRunScript() {
           mainButtons[index + 1].click();
         } else {
           // Unduh semua file setelah semua hyperlink dikumpulkan
-          console.log("download dimulai");
+          console.log("download dimulai")
           await downloadFiles();
         }
       }, { once: true }); // Event listener hanya sekali eksekusi per tombol
