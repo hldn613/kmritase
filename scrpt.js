@@ -7,10 +7,14 @@ const modalContainerDiv = document.createElement('div');
 modalContainerDiv.id = 'modalContainer';
 document.body.appendChild(modalContainerDiv);
 
-const harusdi = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
+const allowedURLs = [
+  'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase',
+  'https://mitradarat-fms.debhub.go.id/digitalchecker/kmritase'
+];
 
+const currentURL = window.location.href;
 function checkUrlAndRunScript() {
-  if (window.location.href === harusdi) {
+  if (allowedURLs.includes(currentURL)) {
     console.log('URL cocok, menjalankan skrip...');
 
     function wait(ms) {
