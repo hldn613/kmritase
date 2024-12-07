@@ -1,9 +1,9 @@
 // URL yang diinginkan
-const desiredUrl = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
+const harusdi = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
 
 // Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
-  if (window.location.href === desiredUrl) {
+  if (window.location.href === harusdi) {
     console.log('URL cocok, menjalankan skrip...');
 
     // Fungsi untuk menunggu beberapa waktu
