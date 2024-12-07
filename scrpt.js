@@ -1,5 +1,5 @@
 // URL yang diinginkan
-const desiredUrl = 'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase';
+const desiredUrl = 'https://mitradarat-fms.dephub.go.id/digitalchecker/kmritase';
 
 // Fungsi untuk memeriksa URL dan menjalankan skrip
 function checkUrlAndRunScript() {
@@ -14,58 +14,13 @@ function checkUrlAndRunScript() {
     // Variabel untuk kontrol
     let isPaused = false;
     let isStopped = false;
+    let allLinks = [];
 
-    // Fungsi untuk mengunduh file secara berurutan menggunakan Fetch API
-    async function downloadFiles(links) {
+    // Fungsi untuk mengumpulkan hyperlink secara berurutan
+    async function collectLinks(links, mainButtonIndex) {
       for (let i = 0; i < links.length; i++) {
-        if (!links[i].classList.contains('tooltipp')) {
-          continue; // Lewati link jika tidak memiliki kelas 'tooltipp'
-        }
-
-        while (isPaused) {
-          await wait(100); // Tunggu hingga tidak pause
-        }
-        if (isStopped) {
-          break; // Berhenti jika reset
-        }
-
-        function convertUrlToFilename(url) {
-          const urlParams = new URLSearchParams(url.split('?')[1]);
-        
-          const noken = urlParams.get('noken').replace(/\+/g, '-');
-          const dateStart = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-          const dateEnd = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-          
-          const filename = `${noken}_${dateStart}_${dateEnd}`;
-          return filename;
-        }
-        
-        const url = links[i].href;
-        const convertedFilename = convertUrlToFilename(url);
-        
-        console.log(convertedFilename); // Output: TB-II-01_2024-11-01 04_59_00_2024-11-01 06_15_00
-        
-        try {
-          const response = await fetch(url);
-          
-          if (!response.ok) {
-            throw new Error('Jaringan bermasalah');
-          }
-
-          const blob = await response.blob();
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = `${convertedFilename}_Rit-${i + 1}.xlsx`; // Nama file yang akan diunduh
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          console.log(`File dari URL ${url} telah berhasil diunduh`);
-
-          // Tunggu 4 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
-          await wait(4000);
-        } catch (error) {
-          console.error(`Gagal mengunduh file dari URL ${url}:`, error);
+        if (links[i].classList.contains('tooltipp')) {
+          allLinks.push({ url: links[i].href, index: mainButtonIndex, linkIndex: i + 1 });
         }
       }
     }
@@ -75,10 +30,64 @@ function checkUrlAndRunScript() {
       let popupLinks = [];
       do {
         btn.click();
-        await wait(3000); // Tambahkan delay untuk menunggu popup muncul
+        await wait(1000); // Tambahkan delay untuk menunggu popup muncul
         popupLinks = document.querySelectorAll('a.tooltipp');
       } while (popupLinks.length === 0 && !isStopped);
       return popupLinks;
+    }
+
+    // Fungsi untuk mengunduh file secara berurutan menggunakan Fetch API
+    async function downloadFiles() {
+      for (let i = 0; i < allLinks.length; i++) {
+        while (isPaused) {
+          await wait(100); // Tunggu hingga tidak pause
+        }
+        if (isStopped) {
+          break; // Berhenti jika reset
+        }
+
+        function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
+          const urlParams = new URLSearchParams(url.split('?')[1]);
+
+          const noken = urlParams.get('noken').replace(/\+/g, '-');
+          const dateStart = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+          const dateEnd = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+
+          const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
+          return filename;
+        }
+
+        const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
+        const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
+
+        console.log(convertedFilename); // Output: TB-II-01_Rit-1_2024-11-01_04_59_00_2024-11-01_06_15_00
+
+        try {
+          const response = await fetch(url);
+
+          if (!response.ok) {
+            throw new Error('Jaringan bermasalah');
+          }
+
+          const blob = await response.blob();
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = `${convertedFilename}.xlsx`; // Nama file yang akan diunduh
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          console.log(`File dari URL ${url} telah berhasil diunduh`);
+
+          // Tunggu 1 detik sebelum mengunduh file berikutnya hanya jika unduhan berhasil
+          await wait(1000);
+        } catch (error) {
+          console.error(`Gagal mengunduh file dari URL ${url}:`, error);
+        }
+      }
+
+      // Jalankan fungsi showModal setelah semua unduhan selesai
+      showModal();
     }
 
     // Ambil semua elemen tombol utama dengan class 'details'
@@ -95,16 +104,17 @@ function checkUrlAndRunScript() {
 
         const popupLinks = await clickMainButtonUntilLinksFound(btn); // Tekan tombol utama sampai menemukan link
 
-        // Mengunduh file dari setiap hyperlink dalam popup dengan delay
-        await downloadFiles(popupLinks);
+        // Mengumpulkan hyperlink dari setiap popup dengan nomor urut
+        await collectLinks(popupLinks, index + 1);
 
         // Lanjutkan ke tombol utama berikutnya jika ada
         if (index < mainButtons.length - 1) {
           console.log(`Melanjutkan ke Tombol Details ${index + 2}`);
           mainButtons[index + 1].click();
         } else {
-          // Panggil showModal setelah tombol terakhir ditekan
-          // showModal();
+          // Unduh semua file setelah semua hyperlink dikumpulkan
+          console.log("download dimulai");
+          await downloadFiles();
         }
       }, { once: true }); // Event listener hanya sekali eksekusi per tombol
     });
