@@ -158,7 +158,7 @@ function checkUrlAndRunScript() {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">SAYA PELIT</button>
-              <a href="https://saweria.co/hldn613" class="btn btn-primary">TRAKTIR KOPI</a>
+              <a href="https://saweria.co/hldn613" target="_blank" class="btn btn-primary">TRAKTIR KOPI</a>
             </div>
           </div>
         </div>
