@@ -9,46 +9,47 @@ const allowedURLs = [
 
 const currentURL = window.location.href;
 function checkUrlAndRunScript() {
-  if (allowedURLs.includes(currentURL)) {
-    console.log('URL cocok, menjalankan skrip...');
-
-    function wait(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    let isPaused = false;
-    let isStopped = false;
-    let allLinks = [];
-    let mainButtons; // Deklarasi di luar untuk akses global
-
-    async function collectLinks(links, mainButtonIndex) {
-      for (let i = 0; i < links.length; i++) {
-        if (links[i].classList.contains('tooltipp')) {
-          allLinks.push({ url: links[i].href, index: mainButtonIndex, linkIndex: i + 1 });
+    if (allowedURLs.includes(currentURL)) {
+      console.log('URL cocok, menjalankan skrip...');
+  
+      function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+  
+      let isPaused = false;
+      let isStopped = false;
+      let isRunning = false; // Variabel untuk melacak status proses
+      let allLinks = [];
+      let mainButtons; // Deklarasi di luar untuk akses global
+  
+      async function collectLinks(links, mainButtonIndex) {
+        for (let i = 0; i < links.length; i++) {
+          if (links[i].classList.contains('tooltipp')) {
+            allLinks.push({ url: links[i].href, index: mainButtonIndex, linkIndex: i + 1 });
+          }
         }
       }
-    }
-
-    async function clickMainButtonUntilLinksFound(btn) {
-      let popupLinks = [];
-      do {
-        btn.click();
-        await wait(1000);
-        popupLinks = document.querySelectorAll('a.tooltipp');
-      } while (popupLinks.length === 0 && !isStopped);
-      return popupLinks;
-    }
-
-    async function downloadFiles() {
-      for (let i = 0; i < allLinks.length; i++) {
-        while (isPaused) {
-          await wait(100);
-        }
-        if (isStopped) {
-          break;
-        }
-
-        function convertDateString(dateString) {
+  
+      async function clickMainButtonUntilLinksFound(btn) {
+        let popupLinks = [];
+        do {
+          btn.click();
+          await wait(1000);
+          popupLinks = document.querySelectorAll('a.tooltipp');
+        } while (popupLinks.length === 0 && !isStopped);
+        return popupLinks;
+      }
+  
+      async function downloadFiles() {
+        for (let i = 0; i < allLinks.length; i++) {
+          while (isPaused) {
+            await wait(100);
+          }
+          if (isStopped) {
+            break;
+          }
+  
+          function convertDateString(dateString) {
             // Pisahkan tanggal dan waktu
             const [datePart, timePart] = dateString.split(' ');
   
@@ -61,7 +62,6 @@ function checkUrlAndRunScript() {
             return newDateString;
           }
   
-  
           function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
             const urlParams = new URLSearchParams(url.split('?')[1]);
   
@@ -69,143 +69,150 @@ function checkUrlAndRunScript() {
             const dateStart1 = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
             const dateEnd1 = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
   
-  
             const dateStart = convertDateString(dateStart1);
             const dateEnd = convertDateString(dateEnd1);
-  
   
             const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
             return filename;
           }
   
-
-        const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
-        const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
-
-        console.log(convertedFilename);
-
-        try {
-          const response = await fetch(url);
-
-          if (!response.ok) {
-            throw new Error('Jaringan bermasalah');
+          const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
+          const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
+  
+          console.log(convertedFilename);
+  
+          try {
+            const response = await fetch(url);
+  
+            if (!response.ok) {
+              throw new Error('Jaringan bermasalah');
+            }
+  
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `${convertedFilename}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+  
+            console.log(`File dari URL ${url} telah berhasil diunduh`);
+  
+            await wait(1000);
+          } catch (error) {
+            console.error(`Gagal mengunduh file dari URL ${url}:`, error);
           }
-
-          const blob = await response.blob();
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = `${convertedFilename}.xlsx`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          console.log(`File dari URL ${url} telah berhasil diunduh`);
-
-          await wait(1000);
-        } catch (error) {
-          console.error(`Gagal mengunduh file dari URL ${url}:`, error);
         }
+        console.log('DONE');
+        showModal();
+        isRunning = false; // Proses selesai
+        document.getElementById('startBtn').disabled = false; // Aktifkan tombol Start kembali
       }
-      console.log(`DONE`);
-      showModal();
-    }
-
-    function setUpEventListeners() {
-      mainButtons = document.querySelectorAll('.details'); // Inisialisasi di sini
-      mainButtons.forEach((btn, index) => {
-        btn.addEventListener('click', async () => {
-          if (isStopped) {
-            return;
-          }
-
-          console.log(`Load Unit ${index + 1}`);
-
-          const popupLinks = await clickMainButtonUntilLinksFound(btn);
-
-          await collectLinks(popupLinks, index + 1);
-
-          if (index < mainButtons.length - 1) {
-            console.log(`Melanjutkan ke Unit ${index + 2}`);
-            mainButtons[index + 1].click();
+  
+      function setUpEventListeners() {
+        mainButtons = document.querySelectorAll('.details'); // Inisialisasi di sini
+        mainButtons.forEach((btn, index) => {
+          btn.addEventListener('click', async () => {
+            if (isStopped) {
+              return;
+            }
+  
+            console.log(`Load Unit ${index + 1}`);
+  
+            const popupLinks = await clickMainButtonUntilLinksFound(btn);
+  
+            await collectLinks(popupLinks, index + 1);
+  
+            if (index < mainButtons.length - 1) {
+              console.log(`Melanjutkan ke Unit ${index + 2}`);
+              mainButtons[index + 1].click();
+            } else {
+              console.log('download dimulai');
+              await downloadFiles();
+            }
+          }, { once: true });
+        });
+      }
+  
+      function startProcess() {
+        if (!isRunning) { 
+          isPaused = false;
+          isStopped = false;
+          isRunning = true; 
+          document.getElementById('startBtn').disabled = true; 
+          if (mainButtons.length > 0) { 
+            mainButtons[0].click();
           } else {
-            console.log("download dimulai")
-            await downloadFiles();
+            console.log('Tidak ada tombol untuk diproses.');
           }
-        }, { once: true });
-      });
-    }
-
-    function startProcess() {
-      isPaused = false;
-      isStopped = false;
-      if (mainButtons.length > 0) { // Periksa apakah mainButtons terdefinisi
-        mainButtons[0].click();
-      } else {
-        console.log('Tidak ada tombol untuk diproses.');
-      }
-    }
-
-    function pauseProcess() {
-      isPaused = true;
-    }
-
-    function resumeProcess() {
-      isPaused = false;
-    }
-
-    function resetProcess() {
-      isPaused = false;
-      isStopped = true;
-      allLinks = [];
-      console.log('Proses di-reset');
-      setUpEventListeners(); // Pasang event listener baru
-    }
-
-    function createControlButton(id, text, onClick) {
-      const button = document.createElement('button');
-      button.id = id;
-      button.textContent = text;
-      button.addEventListener('click', onClick);
-      document.getElementById('controls').appendChild(button);
-    }
-
-    const controlsDiv = document.createElement('div');
-    controlsDiv.id = 'controls';
-    controlsDiv.style.position = 'fixed';
-    controlsDiv.style.bottom = '20px';
-    controlsDiv.style.right = '20px';
-    controlsDiv.style.display = 'flex';
-    controlsDiv.style.flexDirection = 'column';
-    controlsDiv.style.gap = '10px';
-    controlsDiv.style.zIndex = '9990';
-    document.getElementById('tab').appendChild(controlsDiv);
-
-    createControlButton('showModalBtn', 'Traktir Kopi', showModal);
-    createControlButton('startBtn', 'Start', startProcess);
-    createControlButton('pauseBtn', 'Pause', pauseProcess);
-    createControlButton('resumeBtn', 'Resume', resumeProcess);
-    createControlButton('resetBtn', 'Reset', resetProcess);
-
-    // Observer untuk mendeteksi perubahan pada tabel data
-    const tableObserver = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' || mutation.type === 'subtree') {
-          console.log('Perubahan terdeteksi.');
-          resetProcess();
+        } else {
+          console.log('Proses sedang berjalan, tunggu sampai selesai.');
         }
+      }
+  
+      function pauseProcess() {
+        isPaused = true;
+      }
+  
+      function resumeProcess() {
+        isPaused = false;
+      }
+  
+      function resetProcess() {
+        isPaused = false;
+        isStopped = true;
+        isRunning = false; // Proses direset
+        allLinks = [];
+        console.log('Proses di-reset');
+        document.getElementById('startBtn').disabled = false; // Aktifkan tombol Start kembali
+        setUpEventListeners(); // Pasang event listener baru
+      }
+  
+      function createControlButton(id, text, onClick) {
+        const button = document.createElement('button');
+        button.id = id;
+        button.textContent = text;
+        button.addEventListener('click', onClick);
+        document.getElementById('controls').appendChild(button);
+      }
+  
+      const controlsDiv = document.createElement('div');
+      controlsDiv.id = 'controls';
+      controlsDiv.style.position = 'fixed';
+      controlsDiv.style.bottom = '20px';
+      controlsDiv.style.right = '20px';
+      controlsDiv.style.display = 'flex';
+      controlsDiv.style.flexDirection = 'column';
+      controlsDiv.style.gap = '10px';
+      controlsDiv.style.zIndex = '9990';
+      document.getElementById('tab').appendChild(controlsDiv);
+  
+      createControlButton('showModalBtn', 'Traktir Kopi', showModal);
+      createControlButton('startBtn', 'Start', startProcess);
+      createControlButton('pauseBtn', 'Pause', pauseProcess);
+      createControlButton('resumeBtn', 'Resume', resumeProcess);
+      createControlButton('resetBtn', 'Reset', resetProcess);
+  
+      // Observer untuk mendeteksi perubahan pada tabel data
+      const tableObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' || mutation.type === 'subtree') {
+            console.log('Perubahan terdeteksi.');
+            resetProcess();
+          }
+        });
       });
-    });
-
-    const tableElement = document.getElementById('datatable');
-    if (tableElement) {
-      tableObserver.observe(tableElement, { childList: true, subtree: true });
+  
+      const tableElement = document.getElementById('datatable');
+      if (tableElement) {
+        tableObserver.observe(tableElement, { childList: true, subtree: true });
+      }
+  
+      setUpEventListeners();
+    } else {
+      console.log('URL tidak cocok, skrip tidak dijalankan.');
     }
-
-    setUpEventListeners();
-  } else {
-    console.log('URL tidak cocok, skrip tidak dijalankan.');
   }
-}
 
 
 function showModal() {
