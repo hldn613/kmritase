@@ -228,7 +228,7 @@ function validasiuser() {
 
   // Daftar nama
   const daftarNama = [
-    'rizkybayu0',
+    'rizkybayu00',
     'btsmakasar1'
   ];
 
