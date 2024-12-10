@@ -1,8 +1,3 @@
-var script = document.createElement('script');
-script.type = 'text/javascript';
-script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js';
-document.head.appendChild(script);
-
 const modalContainerDiv = document.createElement('div');
 modalContainerDiv.id = 'modalContainer';
 document.body.appendChild(modalContainerDiv);
@@ -24,6 +19,7 @@ function checkUrlAndRunScript() {
     let isPaused = false;
     let isStopped = false;
     let allLinks = [];
+    let mainButtons; // Deklarasi di luar untuk akses global
 
     async function collectLinks(links, mainButtonIndex) {
       for (let i = 0; i < links.length; i++) {
@@ -90,36 +86,43 @@ function checkUrlAndRunScript() {
           console.error(`Gagal mengunduh file dari URL ${url}:`, error);
         }
       }
+      console.log(`DONE`);
+      showModal();
     }
 
-    const mainButtons = document.querySelectorAll('.details');
+    function setUpEventListeners() {
+      mainButtons = document.querySelectorAll('.details'); // Inisialisasi di sini
+      mainButtons.forEach((btn, index) => {
+        btn.addEventListener('click', async () => {
+          if (isStopped) {
+            return;
+          }
 
-    mainButtons.forEach((btn, index) => {
-      btn.addEventListener('click', async () => {
-        if (isStopped) {
-          return;
-        }
+          console.log(`Tombol Details ${index + 1}`);
 
-        console.log(`Tombol Details ${index + 1} ditekan`);
+          const popupLinks = await clickMainButtonUntilLinksFound(btn);
 
-        const popupLinks = await clickMainButtonUntilLinksFound(btn);
+          await collectLinks(popupLinks, index + 1);
 
-        await collectLinks(popupLinks, index + 1);
-
-        if (index < mainButtons.length - 1) {
-          console.log(`Melanjutkan ke Tombol Details ${index + 2}`);
-          mainButtons[index + 1].click();
-        } else {
-          console.log("download dimulai")
-          await downloadFiles();
-        }
-      }, { once: true });
-    });
+          if (index < mainButtons.length - 1) {
+            console.log(`Melanjutkan ke Tombol Details ${index + 2}`);
+            mainButtons[index + 1].click();
+          } else {
+            console.log("download dimulai")
+            await downloadFiles();
+          }
+        }, { once: true });
+      });
+    }
 
     function startProcess() {
       isPaused = false;
       isStopped = false;
-      mainButtons[0].click();
+      if (mainButtons.length > 0) { // Periksa apakah mainButtons terdefinisi
+        mainButtons[0].click();
+      } else {
+        console.log('Tidak ada tombol untuk diproses.');
+      }
     }
 
     function pauseProcess() {
@@ -133,41 +136,9 @@ function checkUrlAndRunScript() {
     function resetProcess() {
       isPaused = false;
       isStopped = true;
+      allLinks = [];
       console.log('Proses di-reset');
-    }
-
-    function showModal() {
-      const modalContainer = document.getElementById('modalContainer');
-
-      const modalDiv = document.createElement('div');
-      modalDiv.className = 'modal fade';
-      modalDiv.id = 'exampleModal';
-      modalDiv.tabIndex = '-1';
-      modalDiv.setAttribute('aria-labelledby', 'exampleModalLabel');
-      modalDiv.setAttribute('aria-hidden', 'true');
-      modalDiv.style.zIndex = '9991';
-      modalDiv.innerHTML = `
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="exampleModalLabel">ADAKAH TRAKTIRAN KOPI OM</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <img src="https://i.pinimg.com/736x/28/bb/e5/28bbe57e0613091ccd39e718d8679abd.jpg" style="width: -webkit-fill-available;">
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">SAYA PELIT</button>
-              <a href="https://saweria.co/hldn613" target="_blank" class="btn btn-primary">TRAKTIR KOPI</a>
-            </div>
-          </div>
-        </div>
-      `;
-
-      modalContainer.appendChild(modalDiv);
-
-      const modal = new bootstrap.Modal(document.getElementById('exampleModal'));
-      modal.show();
+      setUpEventListeners(); // Pasang event listener baru
     }
 
     function createControlButton(id, text, onClick) {
@@ -195,53 +166,82 @@ function checkUrlAndRunScript() {
     createControlButton('resumeBtn', 'Resume', resumeProcess);
     createControlButton('resetBtn', 'Reset', resetProcess);
 
+    // Observer untuk mendeteksi perubahan pada tabel data
+    const tableObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' || mutation.type === 'subtree') {
+          console.log('Perubahan terdeteksi pada tabel data. Mengatur ulang event listener.');
+          resetProcess();
+        }
+      });
+    });
+
+    const tableElement = document.getElementById('datatable'); // Ganti dengan ID tabel data kamu
+    if (tableElement) {
+      tableObserver.observe(tableElement, { childList: true, subtree: true });
+    }
+
+    setUpEventListeners(); // Pasang event listener untuk pertama kali
   } else {
     console.log('URL tidak cocok, skrip tidak dijalankan.');
   }
 }
 
-function openModal() {
-  const modalHTML = `
-      <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-              <div class="modal-content">
-                  <div class="modal-header">
-                      <h5 class="modal-title" id="exampleModalLabel">Input Password</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                      <div class="mb-3">
-                          <label for="key21" class="form-label">Password</label>
-                          <input type="password" class="form-control" id="key21">
-                      </div>
-                  </div>
-                  <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                      <button type="button" class="btn btn-primary" onclick="checkkey21()">Submit</button>
-                  </div>
-              </div>
-          </div>
+
+function showModal() {
+  const modalContainer = document.getElementById('modalContainer');
+
+  const modalDiv = document.createElement('div');
+  modalDiv.className = 'modal fade';
+  modalDiv.id = 'exampleModal';
+  modalDiv.tabIndex = '-1';
+  modalDiv.setAttribute('aria-labelledby', 'exampleModalLabel');
+  modalDiv.setAttribute('aria-hidden', 'true');
+  modalDiv.style.zIndex = '9991';
+  modalDiv.innerHTML = `
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">ADAKAH TRAKTIRAN KOPI OM</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img src="https://i.pinimg.com/736x/28/bb/e5/28bbe57e0613091ccd39e718d8679abd.jpg" style="width: -webkit-fill-available;">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">SAYA PELIT</button>
+          <a href="https://saweria.co/hldn613" target="_blank" class="btn btn-primary">TRAKTIR KOPI</a>
+        </div>
       </div>
+    </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHTML;
-  const myModal = new bootstrap.Modal(document.getElementById('myModal'));
-  myModal.show();
+
+  modalContainer.appendChild(modalDiv);
+
+  const modal = new bootstrap.Modal(document.getElementById('exampleModal'));
+  modal.show();
 }
 
-function checkkey21() {
-  const key21 = document.getElementById('key21').value;
-  const validHashes = [
-    '18462725b3be3ad2db24f99f62c6b43f',
-    '3858f62230ac3c915f300c664312c63f'
-  ];
-  const key21Hash = CryptoJS.MD5(key21).toString();
+function validasiuser() {
+  const paragraphs = document.getElementsByTagName('span');
+  const secondParagraph = paragraphs[9].innerHTML;
 
-  if (validHashes.includes(key21Hash)) {
-    const myModal = bootstrap.Modal.getInstance(document.getElementById('myModal'));
-    myModal.hide();
+  // Daftar nama
+  const daftarNama = [
+    'rizkybayu0',
+    'btsmakasar1'
+  ];
+
+  // Nama yang akan diperiksa
+  const nama = secondParagraph;
+
+  // Memeriksa apakah nama ada dalam daftar
+  if (daftarNama.includes(nama)) {
     checkUrlAndRunScript()
   } else {
-    alert('Password salah. Silakan coba lagi.');
+    console.log('Maaf Anda Tidak Terdaftar.Silangkan Traktir Kopi Terlebih dahulu');
+    showModal()
   }
 }
-openModal()
+
+validasiuser()
