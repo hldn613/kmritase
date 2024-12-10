@@ -48,16 +48,36 @@ function checkUrlAndRunScript() {
           break;
         }
 
-        function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
-          const urlParams = new URLSearchParams(url.split('?')[1]);
-
-          const noken = urlParams.get('noken').replace(/\+/g, '-');
-          const dateStart = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-          const dateEnd = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-
-          const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
-          return filename;
-        }
+        function convertDateString(dateString) {
+            // Pisahkan tanggal dan waktu
+            const [datePart, timePart] = dateString.split(' ');
+  
+            // Pisahkan bagian tahun, bulan, dan hari
+            const [year, month, day] = datePart.split('-');
+  
+            // Gabungkan kembali dalam format baru
+            const newDateString = `${day}-${month}-${year} ${timePart}`;
+  
+            return newDateString;
+          }
+  
+  
+          function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
+            const urlParams = new URLSearchParams(url.split('?')[1]);
+  
+            const noken = urlParams.get('noken').replace(/\+/g, '-');
+            const dateStart1 = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+            const dateEnd1 = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+  
+  
+            const dateStart = convertDateString(dateStart1);
+            const dateEnd = convertDateString(dateEnd1);
+  
+  
+            const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
+            return filename;
+          }
+  
 
         const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
         const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
@@ -98,14 +118,14 @@ function checkUrlAndRunScript() {
             return;
           }
 
-          console.log(`Tombol Details ${index + 1}`);
+          console.log(`Load Unit ${index + 1}`);
 
           const popupLinks = await clickMainButtonUntilLinksFound(btn);
 
           await collectLinks(popupLinks, index + 1);
 
           if (index < mainButtons.length - 1) {
-            console.log(`Melanjutkan ke Tombol Details ${index + 2}`);
+            console.log(`Melanjutkan ke Unit ${index + 2}`);
             mainButtons[index + 1].click();
           } else {
             console.log("download dimulai")
@@ -170,18 +190,18 @@ function checkUrlAndRunScript() {
     const tableObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList' || mutation.type === 'subtree') {
-          console.log('Perubahan terdeteksi pada tabel data. Mengatur ulang event listener.');
+          console.log('Perubahan terdeteksi.');
           resetProcess();
         }
       });
     });
 
-    const tableElement = document.getElementById('datatable'); // Ganti dengan ID tabel data kamu
+    const tableElement = document.getElementById('datatable');
     if (tableElement) {
       tableObserver.observe(tableElement, { childList: true, subtree: true });
     }
 
-    setUpEventListeners(); // Pasang event listener untuk pertama kali
+    setUpEventListeners();
   } else {
     console.log('URL tidak cocok, skrip tidak dijalankan.');
   }
