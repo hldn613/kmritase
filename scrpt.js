@@ -63,18 +63,28 @@ function checkUrlAndRunScript() {
           }
   
           function convertUrlToFilename(url, mainButtonIndex, linkIndex) {
-            const urlParams = new URLSearchParams(url.split('?')[1]);
-  
-            const noken = urlParams.get('noken').replace(/\+/g, '-');
-            const dateStart1 = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-            const dateEnd1 = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
-  
-            const dateStart = convertDateString(dateStart1);
-            const dateEnd = convertDateString(dateEnd1);
-  
-            const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
-            return filename;
+            let noken = '';
+          
+            try {
+              const urlParams = new URLSearchParams(url.split('?')[1]);
+          
+              noken = urlParams.get('noken').replace(/\+/g, '-');
+              const dateStart1 = urlParams.get('date_start').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+              const dateEnd1 = urlParams.get('date_end').replace(/%3A/g, ':').replace(/\+/g, ' ').replace(/:/g, '_');
+          
+              const dateStart = convertDateString(dateStart1);
+              const dateEnd = convertDateString(dateEnd1);
+          
+              const filename = `${noken}_Rit-${linkIndex}_${dateStart}_${dateEnd}`;
+              return filename;
+            } catch (error) {
+              console.error('Terjadi kesalahan:', error, `Unit: ${noken}`);
+              return `Kesalahan: Unit: ${noken} gagal di unduh`;
+            }
           }
+          
+          
+          
   
           const { url, index: mainButtonIndex, linkIndex } = allLinks[i];
           const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
@@ -96,7 +106,7 @@ function checkUrlAndRunScript() {
             link.click();
             document.body.removeChild(link);
   
-            console.log(`File dari URL ${url} telah berhasil diunduh`);
+            console.log(`File telah diunduh`);
   
             await wait(1000);
           } catch (error) {
@@ -127,7 +137,7 @@ function checkUrlAndRunScript() {
               console.log(`Melanjutkan ke Unit ${index + 2}`);
               mainButtons[index + 1].click();
             } else {
-              console.log('download dimulai');
+              console.log('<hr>download dimulai');
               await downloadFiles();
             }
           }, { once: true });
@@ -135,12 +145,12 @@ function checkUrlAndRunScript() {
       }
   
       function startProcess() {
-        if (!isRunning) { 
+        if (!isRunning) { // Periksa apakah proses sedang berjalan
           isPaused = false;
           isStopped = false;
-          isRunning = true; 
-          document.getElementById('startBtn').disabled = true; 
-          if (mainButtons.length > 0) { 
+          isRunning = true; // Tandai proses sedang berjalan
+          document.getElementById('startBtn').disabled = true; // Nonaktifkan tombol Start
+          if (mainButtons.length > 0) { // Periksa apakah mainButtons terdefinisi
             mainButtons[0].click();
           } else {
             console.log('Tidak ada tombol untuk diproses.');
@@ -168,30 +178,89 @@ function checkUrlAndRunScript() {
         setUpEventListeners(); // Pasang event listener baru
       }
   
+      // Fungsi untuk membuat elemen kontrol
       function createControlButton(id, text, onClick) {
         const button = document.createElement('button');
         button.id = id;
         button.textContent = text;
+        button.className = 'btn btn-primary me-2';
         button.addEventListener('click', onClick);
         document.getElementById('controls').appendChild(button);
-      }
-  
-      const controlsDiv = document.createElement('div');
-      controlsDiv.id = 'controls';
-      controlsDiv.style.position = 'fixed';
-      controlsDiv.style.bottom = '20px';
-      controlsDiv.style.right = '20px';
-      controlsDiv.style.display = 'flex';
-      controlsDiv.style.flexDirection = 'column';
-      controlsDiv.style.gap = '10px';
-      controlsDiv.style.zIndex = '9990';
-      document.getElementById('tab').appendChild(controlsDiv);
-  
-      createControlButton('showModalBtn', 'Traktir Kopi', showModal);
-      createControlButton('startBtn', 'Start', startProcess);
-      createControlButton('pauseBtn', 'Pause', pauseProcess);
-      createControlButton('resumeBtn', 'Resume', resumeProcess);
-      createControlButton('resetBtn', 'Reset', resetProcess);
+    }
+
+    // Buat dan tambahkan elemen gaya ke dalam head
+    const style = document.createElement('style');
+    style.textContent = `
+        .floating-card {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            width: 477px;
+            z-index: 9990;
+        }
+        .hacker-text {
+            overflow: auto;
+            max-height: 80px;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: black;
+            color: lime;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Buat elemen kontrol dan card
+    const controlsDiv = document.createElement('div');
+    controlsDiv.id = 'controls';
+    controlsDiv.className = 'control-buttons';
+
+    const card = document.createElement('div');
+    card.className = 'card floating-card shadow';
+
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+
+    const cardTitle = document.createElement('h5');
+    cardTitle.className = 'card-title';
+    cardTitle.textContent = 'Informasi';
+
+    const hackerText = document.createElement('div');
+    hackerText.className = 'hacker-text';
+    hackerText.id = 'htex';
+    
+    hackerText.innerHTML = 'Informasi 1<br>Informasi 2<br>Informasi 3';
+    
+    cardBody.appendChild(cardTitle);
+    cardBody.appendChild(hackerText);
+    cardBody.appendChild(controlsDiv);
+    card.appendChild(cardBody);
+    document.getElementById('tab').appendChild(card);
+
+    createControlButton('showModalBtn', 'Traktir Kopi', showModal);
+    createControlButton('startBtn', 'Start', startProcess);
+    createControlButton('pauseBtn', 'Pause', pauseProcess);
+    createControlButton('resumeBtn', 'Resume', resumeProcess);
+    createControlButton('resetBtn', 'Reset', resetProcess);
+
+
+    (function() { 
+      const oldLog = console.log; 
+      console.log = function(message) { 
+        const htex = document.getElementById('htex'); 
+        htex.innerHTML += message + '<br>';
+        htex.scrollTop = htex.scrollHeight;
+        oldLog.apply(console, arguments);
+      }; 
+    })();
   
       // Observer untuk mendeteksi perubahan pada tabel data
       const tableObserver = new MutationObserver((mutations) => {
