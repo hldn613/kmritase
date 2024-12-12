@@ -145,6 +145,7 @@ function checkUrlAndRunScript() {
       }
   
       function startProcess() {
+        resetProcess()
         if (!isRunning) { // Periksa apakah proses sedang berjalan
           isPaused = false;
           isStopped = false;
