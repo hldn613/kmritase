@@ -264,14 +264,14 @@ function checkUrlAndRunScript() {
     })();
   
       // Observer untuk mendeteksi perubahan pada tabel data
-      const tableObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'childList' || mutation.type === 'subtree') {
-            console.log('Perubahan terdeteksi.');
-            resetProcess();
-          }
-        });
-      });
+      // const tableObserver = new MutationObserver((mutations) => {
+      //   mutations.forEach((mutation) => {
+      //     if (mutation.type === 'childList' || mutation.type === 'subtree') {
+      //       console.log('Perubahan terdeteksi.');
+      //       resetProcess();
+      //     }
+      //   });
+      // });
   
       const tableElement = document.getElementById('datatable');
       if (tableElement) {
