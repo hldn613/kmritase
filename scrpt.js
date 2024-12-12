@@ -4,7 +4,7 @@ document.body.appendChild(modalContainerDiv);
 
 const allowedURLs = [
   'https://mitradarat-fms.kemenhub.go.id/digitalchecker/kmritase',
-  'https://mitradarat-fms.debhub.go.id/digitalchecker/kmritase'
+  'https://mitradarat-fms.dephub.go.id/digitalchecker/kmritase'
 ];
 
 const currentURL = window.location.href;
