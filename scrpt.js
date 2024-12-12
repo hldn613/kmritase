@@ -90,6 +90,7 @@ function checkUrlAndRunScript() {
           const convertedFilename = convertUrlToFilename(url, mainButtonIndex, linkIndex);
   
           console.log(convertedFilename);
+          console.log('Loading...');
   
           try {
             const response = await fetch(url);
